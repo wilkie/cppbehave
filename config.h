@@ -3,9 +3,17 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+  #define TIMEGETTIME
+#else
+  #define GETTIMEOFDAY
+  #include <sys/time.h>
+#endif
+
 namespace Configuration {
   bool printResults = true;
   bool printSeed    = true;
+  bool printTime    = true;
 }
 
 void do_before() {}
@@ -125,7 +133,7 @@ NewTest::NewTest(NewDescribeBase* parent, void(*before_func)(), void(*after_func
 
 NewDescribe _describe("{}");
 
-char* yieldDescribeName(NewDescribeBase* ds) {
+static char* yieldDescribeName(NewDescribeBase* ds) {
   NewDescribeBase* current = ds;
   int maxChars = 0;
   while(current != NULL) {
@@ -161,7 +169,7 @@ char* yieldDescribeName(NewDescribeBase* ds) {
   return testRoot;
 }
 
-void printFailure(TestDetails test) {
+static void printFailure(TestDetails test) {
   char* describeName = yieldDescribeName(test.parent);
 
   printf("Failed: %s:%d %s %s\n", test.filename, test.line, describeName, test.name);
@@ -169,7 +177,7 @@ void printFailure(TestDetails test) {
   delete [] describeName;
 }
 
-void printDescribe(NewDescribeBase* root) {
+static void printDescribe(NewDescribeBase* root) {
   char* describeName = yieldDescribeName(root);
 
   if (strlen(describeName) > 0) {
@@ -189,11 +197,11 @@ void printDescribe(NewDescribeBase* root) {
   }
 }
 
-void printDocumentation() {
+static void printDocumentation() {
   printDescribe(&_describe);
 }
 
-void reportTests() {
+static void reportTests() {
   printf("  Passes: %d\n", _describe.totalPasses);
   printf("Failures: %d\n", _describe.totalFails);
   printf("\n");
@@ -201,6 +209,54 @@ void reportTests() {
   for(unsigned int i = 0; i < _describe.totalFails; i++) {
     printFailure(_describe._failedTests[i]);
   }
+}
+
+#ifdef GETTIMEOFDAY
+static struct timeval starttime, endtime, timediff;
+
+unsigned long timeval_diff(struct timeval *end_time, struct timeval *start_time) {
+  struct timeval difference;
+
+  difference.tv_sec  = end_time->tv_sec  - start_time->tv_sec;
+  difference.tv_usec = end_time->tv_usec - start_time->tv_usec;
+
+  if (difference.tv_usec < 0) {
+    difference.tv_usec += 1000000;
+    difference.tv_sec  -= 1;
+  }
+
+  return 1000000LL * difference.tv_sec + difference.tv_usec;
+}
+
+static void startClock() {
+  gettimeofday(&starttime,0x0);
+}
+
+static void endClock() {
+  gettimeofday(&endtime,0x0);
+}
+
+static unsigned long clockTime() {
+  return timeval_diff(&endtime, &starttime);
+}
+#endif
+
+#ifdef TIMEGETTIME
+
+
+static void startClock() {
+}
+
+static void endClock() {
+}
+
+static unsigned long clockTime() {
+}
+#endif
+
+static void reportTime() {
+  unsigned long ms = clockTime();
+  printf("Time: %lums\n", ms);
 }
 
 int main(int argc, char** argv) {
@@ -227,7 +283,9 @@ int main(int argc, char** argv) {
 
   srand(seed);
 
+  startClock();
   _describe.runTests();
+  endClock();
   printf("\n");
 
   if (Configuration::printResults) {
@@ -239,14 +297,19 @@ int main(int argc, char** argv) {
     printf("\nSeed: %d\n", seed);
   }
 
+  if (Configuration::printTime) {
+    printf("\n");
+    reportTime();
+  }
+
   return 0;
 }
 
 class Settings {
-public:
-  Settings(void(*block)()) {
-    block();
-  }
+  public:
+    Settings(void(*block)()) {
+      block();
+    }
 };
 
 #define configuration         \
