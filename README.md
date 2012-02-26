@@ -67,6 +67,9 @@ The configuration block can contain several options and parameters you can use t
 
         // Whether or not to report the results (# of passes, etc)
         printResults = true;
+
+        // Whether or not to report the time elapsed
+        printTime = true;
       }
     }
 
