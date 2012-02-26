@@ -201,27 +201,22 @@ NewDescribe describe("{}");
   }                                                                        \
   namespace Describe##x
 
-int main() {
-  describe.runTests();
-  printf("\n");
-  printf("Passes: %d\n", describe.totalPasses);
-  printf("Failures: %d\n", describe.totalFails);
-  printf("\n");
+char* yieldDescribeName(NewDescribeBase* describe) {
+  NewDescribeBase* current = describe;
+  int maxChars = 0;
+  while(current != NULL) {
+    maxChars += strlen(current->name) + 2;
+    current = current->parent;
+  }
+  char* testRoot = new char[maxChars+1];
+  char* origRoot = testRoot;
+  strcpy(testRoot, "");
 
-  for(unsigned int i = 0; i < describe.totalFails; i++) {
-    TestDetails test = describe._failedTests[i];
-    NewDescribeBase* current = test.parent;
-    int maxChars = 0;
-    while(current != NULL) {
-      maxChars += strlen(current->name) + 2;
-      current = current->parent;
-    }
-    char* testRoot = new char[maxChars+1];
-    strcpy(testRoot, "");
-
-    current = test.parent;
-    while(current != NULL) {
-      // Shift array over current->name + 2
+  current = describe;
+  while(current != NULL) {
+    // Shift array over current->name + 2
+    // If it is not the root
+    if (strcmp(current->name, "{}") != 0) {
       int shiftAmount = strlen(current->name) + 2;
       for (int i = shiftAmount + strlen(testRoot) + 1; i >= shiftAmount; i--) {
         testRoot[i] = testRoot[i - shiftAmount];
@@ -232,16 +227,63 @@ int main() {
       }
       testRoot[shiftAmount-1] = ':';
       testRoot[shiftAmount-2] = ':';
-      current = current->parent;
     }
-    // Go past the {}:: beginning
-    testRoot += 4;
-
-    // Remove last ::
-    testRoot[strlen(testRoot)-2] = '\0';
-
-    printf("Failed: %s:%d %s %s\n", test.filename, test.line, testRoot, test.name);
+    current = current->parent;
   }
+
+  // Remove last ::
+  testRoot[strlen(testRoot)-2] = '\0';
+
+  return testRoot;
+}
+
+void printFailure(TestDetails test) {
+  char* describeName = yieldDescribeName(test.parent);
+
+  printf("Failed: %s:%d %s %s\n", test.filename, test.line, describeName, test.name);
+
+  delete [] describeName;
+}
+
+void printDescribe(NewDescribeBase* root) {
+  char* describeName = yieldDescribeName(root);
+
+  if (strlen(describeName) > 0) {
+    printf("%s\n", describeName);
+
+    for(unsigned int t = 0; t < root->_testCount; t++) {
+      printf("  %s\n", root->_tests[t].name);
+    }
+  }
+
+  delete [] describeName;
+
+  printf("\n");
+
+  for(unsigned int c = 0; c < root->_childCount; c++) {
+    printDescribe(root->_children[c]);
+  }
+}
+
+void printDocumentation() {
+  printDescribe(&describe);
+}
+
+void reportTests() {
+  printf("\n");
+  printf("Passes: %d\n", describe.totalPasses);
+  printf("Failures: %d\n", describe.totalFails);
+  printf("\n");
+
+  for(unsigned int i = 0; i < describe.totalFails; i++) {
+    printFailure(describe._failedTests[i]);
+  }
+}
+
+int main() {
+  describe.runTests();
+
+  reportTests();
 
   return 0;
 }
