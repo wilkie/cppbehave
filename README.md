@@ -51,6 +51,8 @@ Failures: 1
 Failed: bar.cpp:8 Foo should work
 
 Seed: 0
+
+Time: 11ms
 ```
 
 ## Configuration
