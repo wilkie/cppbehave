@@ -30,3 +30,14 @@ describe (Foo) {
     }
   }
 }
+
+/* Outputs:
+ *
+ * F..F
+ * Passes: 2
+ * Failures: 2
+ *
+ * Failed: example.cpp:23 Foo::Else::Bar should do something crazy
+ * Failed: example.cpp:15 Foo should do another thing
+ *
+ */
