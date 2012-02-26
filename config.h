@@ -4,7 +4,8 @@
 #include <stdlib.h>
 
 #ifdef _WIN32
-  #define TIMEGETTIME
+  #define QUERYPERFORMANCECOUNTER
+  #include <windows.h>
 #else
   #define GETTIMEOFDAY
   #include <sys/time.h>
@@ -54,7 +55,7 @@ void NewDescribeBase::addTest(void (*test_func)(), void(*before_func)(), void(*a
 unsigned int NewDescribeBase::totalPasses = 0;
 unsigned int NewDescribeBase::totalFails  = 0;
 
-unsigned int NewDescribeBase::_failedMax = 0;
+unsigned int NewDescribeBase::_failedMax   = 32;
 TestDetails* NewDescribeBase::_failedTests = NULL;
 
 NewDescribeBase::NewDescribeBase(NewDescribeBase* parent, const char* name) {
@@ -154,7 +155,7 @@ static char* yieldDescribeName(NewDescribeBase* ds) {
         testRoot[i] = testRoot[i - shiftAmount];
       }
       // Copy (without \0) over string
-      for (int i = 0; i < strlen(current->name); i++) {
+      for (unsigned int i = 0; i < strlen(current->name); i++) {
         testRoot[i] = current->name[i];
       }
       testRoot[shiftAmount-1] = ':';
@@ -241,16 +242,20 @@ static unsigned long clockTime() {
 }
 #endif
 
-#ifdef TIMEGETTIME
-
+#ifdef QUERYPERFORMANCECOUNTER
+static LARGE_INTEGER _freq, _start, _end;
 
 static void startClock() {
+  QueryPerformanceFrequency(&_freq);
+  QueryPerformanceCounter(&_start);
 }
 
 static void endClock() {
+  QueryPerformanceCounter(&_end);
 }
 
 static unsigned long clockTime() {
+	return (unsigned long)((_end.QuadPart - _start.QuadPart) * 1000 / _freq.QuadPart);
 }
 #endif
 
