@@ -1,25 +1,15 @@
 #include "harness.h"
 
 describe (Foo) {
+	int x = 5;
+
 	it ("should do a thing") {
-		should(3 == 27);
+		should(x == 5);
+		should(x == 6);
 	}
-};
 
-describe (World) {
-	describe (addActor) {
-		int x;
-
-		before {
-			x = 5;
+	describe (Else) {
+		describe (Bar) {
 		}
-
-		after {
-			x = 0;
-		}
-
-		it ("should really do a thing") {
-			should(x == 5);
-		}
-	};
-};
+	}
+}
