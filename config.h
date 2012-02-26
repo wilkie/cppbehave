@@ -3,6 +3,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+namespace Configuration {
+  bool printResults = true;
+  bool printSeed    = true;
+}
+
 void do_before() {}
 void do_after()  {}
 
@@ -189,8 +194,7 @@ void printDocumentation() {
 }
 
 void reportTests() {
-  printf("\n");
-  printf("Passes: %d\n", _describe.totalPasses);
+  printf("  Passes: %d\n", _describe.totalPasses);
   printf("Failures: %d\n", _describe.totalFails);
   printf("\n");
 
@@ -224,15 +228,31 @@ int main(int argc, char** argv) {
   srand(seed);
 
   _describe.runTests();
-  reportTests();
+  printf("\n");
 
-  printf("Seed: %d\n", seed);
+  if (Configuration::printResults) {
+    printf("\n");
+    reportTests();
+  }
+
+  if (Configuration::printSeed) {
+    printf("\nSeed: %d\n", seed);
+  }
 
   return 0;
 }
 
-namespace Configuration {
-}
+class Settings {
+public:
+  Settings(void(*block)()) {
+    block();
+  }
+};
 
-#define configuration     \
+#define configuration         \
   namespace Configuration
+
+#define settings                    \
+  void do_settings();               \
+  Settings _settings(&do_settings); \
+  void do_settings()
