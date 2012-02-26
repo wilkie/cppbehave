@@ -234,7 +234,7 @@ int main() {
       testRoot[shiftAmount-2] = ':';
       current = current->parent;
     }
-    // Go passed the {}:: beginning
+    // Go past the {}:: beginning
     testRoot += 4;
 
     // Remove last ::
