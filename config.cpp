@@ -1,1 +1,4 @@
 #include "config.h"
+
+configuration {
+}

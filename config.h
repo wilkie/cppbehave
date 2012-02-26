@@ -1,4 +1,7 @@
 #include "harness.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 void do_before() {}
 void do_after()  {}
@@ -197,18 +200,39 @@ void reportTests() {
 }
 
 int main(int argc, char** argv) {
+  unsigned int seed = 0;
   if (argc > 1) {
     if (strncmp(argv[1], "--docs", 6) == 0) {
       printDocumentation();
+      return 0;
+    }
+    else if (strncmp(argv[1], "--seed", 6) == 0) {
+      if (argc > 2) {
+        seed = atoi(argv[2]);
+      }
+      else {
+        printf("No seed specified\n");
+        return 0;
+      }
     }
     else {
       printf("Unknown arguments\n");
+      return 0;
     }
-    return 0;
   }
+
+  srand(seed);
 
   _describe.runTests();
   reportTests();
 
+  printf("Seed: %d\n", seed);
+
   return 0;
 }
+
+namespace Configuration {
+}
+
+#define configuration     \
+  namespace Configuration
